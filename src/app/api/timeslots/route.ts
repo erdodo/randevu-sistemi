@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
       select: { time: true },
     });
 
-    const bookedTimes = booked.map((a) => a.time);
+    const bookedTimes = booked.map((a: (typeof booked)[number]) => a.time);
     const slots = generateTimeSlots(business.openTime, business.closeTime, business.slotDuration, bookedTimes);
 
     return NextResponse.json({ slots });

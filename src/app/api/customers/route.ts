@@ -14,7 +14,7 @@ export async function GET() {
 
     // Enrich with appointment counts
     const enriched = await Promise.all(
-      customers.map(async (c) => {
+      customers.map(async (c: (typeof customers)[number]) => {
         const appointmentCount = await prisma.appointment.count({
           where: { customerPhone: c.phone, businessId: business.id },
         });

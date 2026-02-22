@@ -102,6 +102,12 @@
       "namedRegex": "^/api/setup(?:/)?$"
     },
     {
+      "page": "/api/setup/reset",
+      "regex": "^/api/setup/reset(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/setup/reset(?:/)?$"
+    },
+    {
       "page": "/api/timeslots",
       "regex": "^/api/timeslots(?:/)?$",
       "routeKeys": {},

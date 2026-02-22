@@ -9,6 +9,7 @@
   "/api/customers/route": "/api/customers",
   "/api/notifications/[id]/route": "/api/notifications/[id]",
   "/api/notifications/route": "/api/notifications",
+  "/api/setup/reset/route": "/api/setup/reset",
   "/api/setup/route": "/api/setup",
   "/api/timeslots/route": "/api/timeslots",
   "/api/webhooks/route": "/api/webhooks",

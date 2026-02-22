@@ -30,6 +30,11 @@ export default function BrandingModal({ business, template, onClose, onSave }: B
   const [activeTab, setActiveTab] = useState<"brand" | "hours" | "services" | "security">("brand");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showDeletePassword, setShowDeletePassword] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   const DAYS = ["Paz", "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt"];
 
@@ -79,6 +84,41 @@ export default function BrandingModal({ business, template, onClose, onSave }: B
       setError(e instanceof Error ? e.message : "Hata oluştu");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const openDeleteFlow = () => {
+    setDeleteError("");
+    setDeletePassword("");
+    setShowDeletePassword(false);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteBusiness = async () => {
+    if (!deletePassword) {
+      setDeleteError("Şifre gerekli");
+      return;
+    }
+
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      const res = await fetch("/api/setup/reset", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: deletePassword }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error ?? "Şirket silinemedi");
+      }
+
+      sessionStorage.removeItem("admin_auth");
+      window.location.href = "/";
+    } catch (e) {
+      setDeleteError(e instanceof Error ? e.message : "Hata oluştu");
+      setDeleting(false);
     }
   };
 
@@ -274,7 +314,95 @@ export default function BrandingModal({ business, template, onClose, onSave }: B
             {saving ? <><Loader2 className="w-5 h-5 animate-spin" /> Kaydediliyor...</> : <><Save className="w-5 h-5" /> Kaydet</>}
           </button>
         </div>
+        <button
+          onClick={openDeleteFlow}
+          className="absolute bottom-2 right-2 px-1.5 py-1 rounded-md text-[10px] font-semibold text-red-600 border border-red-300 bg-red-50 hover:bg-red-100 leading-none"
+          title="Tehlikeli işlem"
+        >
+          Şirketi Sil
+        </button>
       </div>
+
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div
+            className="absolute inset-0 bg-black/45"
+            onClick={() => setShowDeleteConfirm(false)}
+          />
+          <div className="relative w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl border border-red-100">
+            <p className="font-bold text-gray-900">Emin misin?</p>
+            <p className="text-sm text-gray-500 mt-1">
+              Bu işlem tüm veritabanı verilerini geri alınamaz şekilde siler.
+            </p>
+            <div className="mt-4 flex gap-2">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 py-2.5 rounded-xl bg-gray-100 text-gray-700 text-sm font-medium"
+              >
+                Vazgeç
+              </button>
+              <button
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setShowDeletePassword(true);
+                }}
+                className="flex-1 py-2.5 rounded-xl bg-red-600 text-white text-sm font-semibold"
+              >
+                Eminim
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeletePassword && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div
+            className="absolute inset-0 bg-black/45"
+            onClick={() => {
+              if (deleting) return;
+              setShowDeletePassword(false);
+            }}
+          />
+          <div className="relative w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl border border-red-100">
+            <p className="font-bold text-gray-900">Şifre Onayı</p>
+            <p className="text-sm text-gray-500 mt-1">
+              Silme işlemi için yönetici şifresini girin.
+            </p>
+            <input
+              type="password"
+              value={deletePassword}
+              onChange={(e) => setDeletePassword(e.target.value)}
+              className={`${inputClass} mt-3`}
+              placeholder="Yönetici şifresi"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !deleting) handleDeleteBusiness();
+              }}
+              autoFocus
+            />
+            {deleteError && (
+              <p className="text-red-500 text-xs mt-2">{deleteError}</p>
+            )}
+            <div className="mt-4 flex gap-2">
+              <button
+                onClick={() => setShowDeletePassword(false)}
+                disabled={deleting}
+                className="flex-1 py-2.5 rounded-xl bg-gray-100 text-gray-700 text-sm font-medium disabled:opacity-50"
+              >
+                İptal
+              </button>
+              <button
+                onClick={handleDeleteBusiness}
+                disabled={deleting}
+                className="flex-1 py-2.5 rounded-xl bg-red-600 text-white text-sm font-semibold disabled:opacity-70 flex items-center justify-center gap-1.5"
+              >
+                {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                Verileri Sil
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -9,6 +9,7 @@
   "/api/customers/route": "app/api/customers/route.js",
   "/api/notifications/[id]/route": "app/api/notifications/[id]/route.js",
   "/api/notifications/route": "app/api/notifications/route.js",
+  "/api/setup/reset/route": "app/api/setup/reset/route.js",
   "/api/setup/route": "app/api/setup/route.js",
   "/api/timeslots/route": "app/api/timeslots/route.js",
   "/api/webhooks/route": "app/api/webhooks/route.js",

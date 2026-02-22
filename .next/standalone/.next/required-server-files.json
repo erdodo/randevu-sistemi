@@ -106,7 +106,7 @@
         "transform": "lodash/{{member}}"
       }
     },
-    "outputFileTracingRoot": "/Users/erdoganyesil/Documents/randevu",
+    "outputFileTracingRoot": "/Users/erdoganyesil/Documents/randevu-sistemi",
     "cacheComponents": false,
     "cacheLife": {
       "default": {
@@ -299,11 +299,11 @@
     "bundlePagesRouterDependencies": false,
     "configFileName": "next.config.ts",
     "turbopack": {
-      "root": "/Users/erdoganyesil/Documents/randevu"
+      "root": "/Users/erdoganyesil/Documents/randevu-sistemi"
     },
     "distDirRoot": ".next"
   },
-  "appDir": "/Users/erdoganyesil/Documents/randevu",
+  "appDir": "/Users/erdoganyesil/Documents/randevu-sistemi",
   "relativeAppDir": "",
   "files": [
     ".next/routes-manifest.json",
