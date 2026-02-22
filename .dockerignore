@@ -1,0 +1,12 @@
+node_modules
+.next
+.git
+.gitignore
+*.md
+.env
+.env.local
+dev.db
+prisma/dev.db
+.DS_Store
+.vscode
+.gemini
