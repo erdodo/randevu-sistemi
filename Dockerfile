@@ -1,23 +1,5 @@
-# --- Stage 1: Dependencies ---
-FROM node:20-alpine AS deps
-WORKDIR /app
-COPY package.json package-lock.json* ./
-RUN npm ci
-
-# --- Stage 2: Builder ---
-FROM node:20-alpine AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
-
-# Generate Prisma client
-RUN npx prisma generate
-
-# Build Next.js
-RUN npm run build
-
-# --- Stage 3: Runner ---
-FROM node:20-alpine AS runner
+# --- Pre-built image (no build step) ---
+FROM node:20-alpine
 WORKDIR /app
 
 ENV NODE_ENV=production
@@ -26,27 +8,25 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy standalone output
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/public ./public
+# Copy pre-built standalone app
+COPY .next/standalone ./
+COPY .next/static ./.next/static
+COPY public ./public
 
-# Copy prisma schema for db push at runtime
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
+# Copy prisma for db push at runtime
+COPY prisma ./prisma
+COPY prisma.config.ts ./prisma.config.ts
 
-# Copy entrypoint script
-COPY docker-entrypoint.sh /app/docker-entrypoint.sh
-RUN chmod +x /app/docker-entrypoint.sh
+# Install only prisma CLI + pg adapter for runtime
+RUN npm install --no-save prisma@7 @prisma/client@7 @prisma/adapter-pg@7 2>/dev/null && \
+    npx prisma generate
 
-# Prisma config for runtime
-COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
+# Copy entrypoint
+COPY docker-entrypoint.sh ./docker-entrypoint.sh
+RUN chmod +x ./docker-entrypoint.sh
 
 EXPOSE 3000
-
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-ENTRYPOINT ["/app/docker-entrypoint.sh"]
+ENTRYPOINT ["./docker-entrypoint.sh"]

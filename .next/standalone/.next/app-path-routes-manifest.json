@@ -1,0 +1,17 @@
+{
+  "/_global-error/page": "/_global-error",
+  "/_not-found/page": "/_not-found",
+  "/admin/page": "/admin",
+  "/api/appointments/[id]/route": "/api/appointments/[id]",
+  "/api/appointments/route": "/api/appointments",
+  "/api/businesses/[slug]/route": "/api/businesses/[slug]",
+  "/api/businesses/route": "/api/businesses",
+  "/api/customers/route": "/api/customers",
+  "/api/notifications/[id]/route": "/api/notifications/[id]",
+  "/api/notifications/route": "/api/notifications",
+  "/api/setup/route": "/api/setup",
+  "/api/timeslots/route": "/api/timeslots",
+  "/api/webhooks/route": "/api/webhooks",
+  "/favicon.ico/route": "/favicon.ico",
+  "/page": "/"
+}

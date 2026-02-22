@@ -1,0 +1,17 @@
+{
+  "/_global-error/page": "app/_global-error/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/admin/page": "app/admin/page.js",
+  "/api/appointments/[id]/route": "app/api/appointments/[id]/route.js",
+  "/api/appointments/route": "app/api/appointments/route.js",
+  "/api/businesses/[slug]/route": "app/api/businesses/[slug]/route.js",
+  "/api/businesses/route": "app/api/businesses/route.js",
+  "/api/customers/route": "app/api/customers/route.js",
+  "/api/notifications/[id]/route": "app/api/notifications/[id]/route.js",
+  "/api/notifications/route": "app/api/notifications/route.js",
+  "/api/setup/route": "app/api/setup/route.js",
+  "/api/timeslots/route": "app/api/timeslots/route.js",
+  "/api/webhooks/route": "app/api/webhooks/route.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/page": "app/page.js"
+}
