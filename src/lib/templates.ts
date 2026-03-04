@@ -1,4 +1,4 @@
-export type Sector = "barber" | "dentist" | "psychologist" | "spa" | "nail" | "fitness";
+export type Sector = "barber" | "dentist" | "psychologist" | "spa" | "nail" | "fitness" | "dietitian";
 
 export interface SectorTemplate {
   id: Sector;
@@ -100,6 +100,20 @@ export const SECTOR_TEMPLATES: Record<Sector, SectorTemplate> = {
     textOnPrimary: "text-white",
     defaultServices: ["PT Seansı", "Beslenme Danışmanlığı", "Grup Dersi", "Vücut Analizi", "Program Hazırlama"],
     tagline: "Limitlerini Yeniden Belirle",
+  },
+  dietitian: {
+    id: "dietitian",
+    label: "Diyetisyen",
+    emoji: "🥗",
+    heroGradient: "from-emerald-600 via-green-600 to-teal-600",
+    cardBg: "bg-white/95",
+    primaryColor: "#059669",
+    accentColor: "#ecfdf5",
+    buttonClass: "bg-emerald-600 hover:bg-emerald-500 text-white",
+    badgeClass: "bg-emerald-100 text-emerald-700 border-emerald-200",
+    textOnPrimary: "text-white",
+    defaultServices: ["İlk Görüşme", "Diyet Programı", "Takip Seansı", "Kilo Yönetimi", "Spor Beslenmesi"],
+    tagline: "Sağlıklı Beslenme, Sağlıklı Yaşam",
   },
 };
 
