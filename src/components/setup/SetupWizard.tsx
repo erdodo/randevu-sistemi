@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { SECTOR_TEMPLATES, SectorTemplate, Sector } from "@/lib/templates";
 import { CAMPAIGN_END_LABEL } from "@/lib/campaign";
+import { Honeypot } from "@/components/Honeypot";
 import {
   ChevronRight,
   ChevronLeft,
@@ -26,6 +27,8 @@ export default function SetupWizard() {
   const [address, setAddress] = useState("");
   const [description, setDescription] = useState("");
   const [password, setPassword] = useState("");
+  const [hp, setHp] = useState("");
+  const [startedAt] = useState(() => Date.now());
   const [confirmPassword, setConfirmPassword] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -70,6 +73,8 @@ export default function SetupWizard() {
           password,
           address: address.trim() || undefined,
           description: description.trim() || undefined,
+          website: hp,
+          startedAt,
         }),
       });
       const data = await res.json();
@@ -247,7 +252,8 @@ export default function SetupWizard() {
 
         {/* Step: Password */}
         {step === "password" && (
-          <div className="animate-in fade-in">
+          <div className="animate-in fade-in relative">
+            <Honeypot value={hp} onChange={setHp} />
             <button
               onClick={() => {
                 setStep("info");

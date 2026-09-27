@@ -2,11 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { SECTOR_TEMPLATES, Sector } from "@/lib/templates";
 import { hashPassword, RESERVED_SLUGS, setSession, slugify } from "@/lib/session";
+import { BURST_MESSAGE, burstSince, isSignupBurst, spamCheck } from "@/lib/antispam";
 
 // Yeni işletme kaydı: işletme + varsayılan hizmetler oluşturulur ve yönetici oturumu açılır.
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    const spam = spamCheck(body);
+    if (spam) return NextResponse.json({ error: spam }, { status: 400 });
+    if (isSignupBurst(await prisma.business.count({ where: { createdAt: { gte: burstSince() } } }))) {
+      return NextResponse.json({ error: BURST_MESSAGE }, { status: 429 });
+    }
     const { sector, name, phone, password, address, description } = body as {
       sector: string;
       name: string;
