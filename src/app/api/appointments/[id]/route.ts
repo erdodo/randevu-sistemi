@@ -1,16 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { triggerWebhooks } from "@/lib/webhooks";
+import { requireBusiness, requireWritableBusiness } from "@/lib/session";
+
+const STATUSES = ["pending", "approved", "cancelled", "completed"];
 
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireBusiness();
+    if (auth.error) return auth.error;
     const { id } = await params;
-    const appointment = await prisma.appointment.findUnique({
-      where: { id },
-      include: { service: true, business: true },
+    const appointment = await prisma.appointment.findFirst({
+      where: { id, businessId: auth.business.id },
+      include: { service: true },
     });
     if (!appointment) return NextResponse.json({ error: "Bulunamadı" }, { status: 404 });
     return NextResponse.json(appointment);
@@ -24,10 +29,15 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireWritableBusiness();
+    if (auth.error) return auth.error;
     const { id } = await params;
     const body = await req.json();
+    if (body.status && !STATUSES.includes(body.status)) {
+      return NextResponse.json({ error: "Geçersiz durum" }, { status: 400 });
+    }
 
-    const appointment = await prisma.appointment.findUnique({ where: { id } });
+    const appointment = await prisma.appointment.findFirst({ where: { id, businessId: auth.business.id } });
     if (!appointment) return NextResponse.json({ error: "Bulunamadı" }, { status: 404 });
 
     const updated = await prisma.appointment.update({
@@ -56,7 +66,7 @@ export async function PUT(
 
     // Trigger webhook on approval
     if (body.status === "approved") {
-      triggerWebhooks("appointment_approved", updated);
+      triggerWebhooks(auth.business.id, "appointment_approved", updated);
     }
 
     return NextResponse.json(updated);
@@ -70,8 +80,11 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireWritableBusiness();
+    if (auth.error) return auth.error;
     const { id } = await params;
-    await prisma.appointment.delete({ where: { id } });
+    const { count } = await prisma.appointment.deleteMany({ where: { id, businessId: auth.business.id } });
+    if (!count) return NextResponse.json({ error: "Bulunamadı" }, { status: 404 });
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: "Silme başarısız" }, { status: 500 });

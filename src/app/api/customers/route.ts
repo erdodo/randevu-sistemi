@@ -1,36 +1,39 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireBusiness } from "@/lib/session";
 
+// Yalnızca bu işletmeden randevu almış müşteriler listelenir
 export async function GET() {
   try {
-    const business = await prisma.business.findFirst();
-    if (!business) {
-      return NextResponse.json({ error: "Dükkan bulunamadı" }, { status: 404 });
-    }
+    const auth = await requireBusiness();
+    if (auth.error) return auth.error;
+    const businessId = auth.business.id;
 
-    const customers = await prisma.customer.findMany({
+    const appts = await prisma.appointment.findMany({
+      where: { businessId },
+      select: { customerPhone: true, customerName: true, date: true, createdAt: true },
       orderBy: { createdAt: "desc" },
     });
 
-    // Enrich with appointment counts
-    const enriched = await Promise.all(
-      customers.map(async (c: (typeof customers)[number]) => {
-        const appointmentCount = await prisma.appointment.count({
-          where: { customerPhone: c.phone, businessId: business.id },
+    const byPhone = new Map<string, { id: string; phone: string; name: string; createdAt: Date; appointmentCount: number; lastAppointmentDate: string | null }>();
+    for (const a of appts) {
+      const c = byPhone.get(a.customerPhone);
+      if (c) {
+        c.appointmentCount++;
+        c.createdAt = a.createdAt; // en eski randevu = ilk geliş
+      } else {
+        byPhone.set(a.customerPhone, {
+          id: a.customerPhone,
+          phone: a.customerPhone,
+          name: a.customerName,
+          createdAt: a.createdAt,
+          appointmentCount: 1,
+          lastAppointmentDate: a.date,
         });
-        const lastAppointment = await prisma.appointment.findFirst({
-          where: { customerPhone: c.phone, businessId: business.id },
-          orderBy: { createdAt: "desc" },
-        });
-        return {
-          ...c,
-          appointmentCount,
-          lastAppointmentDate: lastAppointment?.date ?? null,
-        };
-      })
-    );
+      }
+    }
 
-    return NextResponse.json(enriched);
+    return NextResponse.json([...byPhone.values()]);
   } catch {
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
   }

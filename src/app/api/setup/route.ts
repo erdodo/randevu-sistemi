@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { SECTOR_TEMPLATES, Sector } from "@/lib/templates";
+import { hashPassword, RESERVED_SLUGS, setSession, slugify } from "@/lib/session";
 
+// Yeni işletme kaydı: işletme + varsayılan hizmetler oluşturulur ve yönetici oturumu açılır.
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -14,13 +16,11 @@ export async function POST(req: NextRequest) {
       description?: string;
     };
 
-    if (!sector || !name || !phone || !password) {
+    if (!sector || !name?.trim() || !phone?.trim() || !password) {
       return NextResponse.json({ error: "Zorunlu alanlar eksik" }, { status: 400 });
     }
-
-    const existing = await prisma.business.findFirst();
-    if (existing) {
-      return NextResponse.json({ error: "Dükkan zaten kurulmuş" }, { status: 409 });
+    if (password.length < 6) {
+      return NextResponse.json({ error: "Şifre en az 6 karakter olmalı" }, { status: 400 });
     }
 
     const template = SECTOR_TEMPLATES[sector as Sector];
@@ -28,24 +28,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Geçersiz sektör" }, { status: 400 });
     }
 
-    const slug = name
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, "")
-      .replace(/\s+/g, "-")
-      .replace(/-+/g, "-")
-      .trim() || "dukkan";
+    // Benzersiz adres: aynı isimde işletme varsa sonuna sayı eklenir
+    const base = slugify(name) || "isletme";
+    let slug = RESERVED_SLUGS.has(base) ? `${base}-1` : base;
+    for (let i = 2; await prisma.business.findUnique({ where: { slug }, select: { id: true } }); i++) {
+      slug = `${base}-${i}`;
+    }
 
     const business = await prisma.business.create({
       data: {
-        name,
+        name: name.trim(),
         slug,
         sector,
         primaryColor: template.primaryColor,
         accentColor: template.accentColor,
         description: description || template.tagline,
         address: address || null,
-        phone,
-        adminPassword: password,
+        phone: phone.trim(),
+        adminPassword: await hashPassword(password),
         workingDays: "1,2,3,4,5,6",
         openTime: "09:00",
         closeTime: "18:00",
@@ -62,9 +62,11 @@ export async function POST(req: NextRequest) {
       })),
     });
 
-    return NextResponse.json({ success: true, business }, { status: 201 });
+    const res = NextResponse.json({ success: true, slug: business.slug }, { status: 201 });
+    await setSession(res, { businessId: business.id, slug: business.slug });
+    return res;
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: "Kurulum başarısız" }, { status: 500 });
+    return NextResponse.json({ error: "Kayıt başarısız" }, { status: 500 });
   }
 }

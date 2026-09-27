@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { hashPassword, publicBusiness, requireWritableBusiness } from "@/lib/session";
 
 export async function GET(
   _req: NextRequest,
@@ -12,7 +13,7 @@ export async function GET(
       include: { services: { where: { isActive: true } } },
     });
     if (!business) return NextResponse.json({ error: "Bulunamadı" }, { status: 404 });
-    return NextResponse.json(business);
+    return NextResponse.json(publicBusiness(business));
   } catch {
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
   }
@@ -23,18 +24,19 @@ export async function PUT(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const auth = await requireWritableBusiness();
+    if (auth.error) return auth.error;
     const { slug } = await params;
+    const existing = auth.business;
+    if (existing.slug !== slug) return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 403 });
+
     const body = await req.json();
-
-    const existing = await prisma.business.findUnique({ where: { slug } });
-    if (!existing) return NextResponse.json({ error: "Bulunamadı" }, { status: 404 });
-
-    if (body.adminPassword && body.adminPassword !== existing.adminPassword) {
-      return NextResponse.json({ error: "Şifre hatalı" }, { status: 401 });
+    if (body.newPassword && String(body.newPassword).length < 6) {
+      return NextResponse.json({ error: "Yeni şifre en az 6 karakter olmalı" }, { status: 400 });
     }
 
     const updated = await prisma.business.update({
-      where: { slug },
+      where: { id: existing.id },
       data: {
         name: body.name ?? existing.name,
         logo: body.logo !== undefined ? body.logo : existing.logo,
@@ -47,7 +49,7 @@ export async function PUT(
         openTime: body.openTime ?? existing.openTime,
         closeTime: body.closeTime ?? existing.closeTime,
         slotDuration: body.slotDuration ?? existing.slotDuration,
-        adminPassword: body.newPassword ?? existing.adminPassword,
+        ...(body.newPassword ? { adminPassword: await hashPassword(body.newPassword) } : {}),
       },
       include: { services: true },
     });
@@ -66,7 +68,7 @@ export async function PUT(
       }
     }
 
-    return NextResponse.json(updated);
+    return NextResponse.json(publicBusiness(updated));
   } catch {
     return NextResponse.json({ error: "Güncelleme başarısız" }, { status: 500 });
   }

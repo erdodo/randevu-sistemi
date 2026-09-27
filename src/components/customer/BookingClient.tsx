@@ -116,7 +116,7 @@ export default function BookingClient({
 
           // Check for current month appointment
           const currentMonth = getCurrentMonthStr();
-          fetch(`/api/appointments?slug=${business.slug}&month=${currentMonth}`)
+          fetch(`/api/appointments?slug=${business.slug}&month=${currentMonth}&phone=${encodeURIComponent(info.phone)}`)
             .then((res) => res.json())
             .then((data: Appointment[]) => {
               if (Array.isArray(data)) {

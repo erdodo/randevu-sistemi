@@ -29,12 +29,13 @@ function buildPayload(appt: AppointmentRecord) {
 }
 
 export async function triggerWebhooks(
+  businessId: string,
   event: WebhookEvent,
   appointment: AppointmentRecord,
 ) {
   try {
     const webhooks = await prisma.webhook.findMany({
-      where: { event, isActive: true },
+      where: { businessId, event, isActive: true },
     });
 
     if (webhooks.length === 0) return;

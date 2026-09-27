@@ -9,7 +9,7 @@ export interface Business {
   description?: string | null;
   address?: string | null;
   phone?: string | null;
-  adminPassword: string;
+  adminPassword?: string; // sunucuda kalır, istemciye gönderilmez
   workingDays: string;
   openTime: string;
   closeTime: string;

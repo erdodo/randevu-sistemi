@@ -17,7 +17,7 @@ model Business {
   description     String?
   address         String?
   phone           String?
-  adminPassword   String   @default("admin123")
+  adminPassword   String   // bcrypt hash (eski kayıtlarda düz metin; ilk girişte hash'e çevrilir)
   workingDays     String   @default("1,2,3,4,5,6")
   openTime        String   @default("09:00")
   closeTime       String   @default("18:00")
@@ -79,10 +79,13 @@ model Notification {
 }
 
 model Webhook {
-  id        String   @id @default(cuid())
-  url       String
+  id         String   @id @default(cuid())
+  businessId String?  // çok işletmeli sürümden önceki kayıtlarda boş
+  url        String
   event     String   // appointment_created, appointment_approved
   secret    String?
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
+
+  @@index([businessId])
 }

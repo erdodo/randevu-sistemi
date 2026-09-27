@@ -39,6 +39,7 @@ import BrandingModal from "./BrandingModal";
 interface AdminClientProps {
   business: Business & { services: Service[] };
   template: SectorTemplate;
+  initialAuthed: boolean;
 }
 
 interface CustomerWithCount extends Customer {
@@ -61,7 +62,6 @@ const TR_MONTHS = [
   "Aralık",
 ];
 const TR_DAYS_SHORT = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
-const ADMIN_KEY = "admin_auth";
 
 function buildCalendar(year: number, month: number): (number | null)[] {
   const total = new Date(year, month + 1, 0).getDate();
@@ -78,8 +78,8 @@ function toDateStr(y: number, m: number, d: number) {
 
 type Tab = "calendar" | "customers" | "webhooks";
 
-export default function AdminClient({ business, template }: AdminClientProps) {
-  const [isAuthed, setIsAuthed] = useState(false);
+export default function AdminClient({ business, template, initialAuthed }: AdminClientProps) {
+  const [isAuthed, setIsAuthed] = useState(initialAuthed);
   const [password, setPassword] = useState("");
   const [authError, setAuthError] = useState("");
   const [currentBusiness, setCurrentBusiness] = useState(business);
@@ -111,10 +111,6 @@ export default function AdminClient({ business, template }: AdminClientProps) {
   const primaryColor = currentBusiness.primaryColor;
   const workingDays = currentBusiness.workingDays.split(",").map(Number);
 
-  useEffect(() => {
-    const stored = sessionStorage.getItem(ADMIN_KEY);
-    if (stored === "true") setIsAuthed(true);
-  }, []);
 
   const fetchMonthData = useCallback(
     async (y: number, m: number) => {
@@ -229,13 +225,20 @@ export default function AdminClient({ business, template }: AdminClientProps) {
     });
   };
 
-  const handleLogin = () => {
-    if (password === currentBusiness.adminPassword) {
-      sessionStorage.setItem(ADMIN_KEY, "true");
+  // Şifre sunucuda doğrulanır; başarılı girişte imzalı oturum çerezi verilir
+  const handleLogin = async () => {
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slug: currentBusiness.slug, password }),
+    });
+    if (res.ok) {
       setIsAuthed(true);
       setAuthError("");
+      setPassword("");
     } else {
-      setAuthError("Şifre hatalı");
+      const d = await res.json().catch(() => ({}));
+      setAuthError(d.error ?? "Şifre hatalı");
     }
   };
 
@@ -381,8 +384,8 @@ export default function AdminClient({ business, template }: AdminClientProps) {
               <Settings className="w-4 h-4" />
             </button>
             <button
-              onClick={() => {
-                sessionStorage.removeItem(ADMIN_KEY);
+              onClick={async () => {
+                await fetch("/api/auth/logout", { method: "POST" });
                 setIsAuthed(false);
               }}
               className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-xl transition-all"

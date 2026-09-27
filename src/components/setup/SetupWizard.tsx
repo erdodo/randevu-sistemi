@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { SECTOR_TEMPLATES, SectorTemplate, Sector } from "@/lib/templates";
+import { CAMPAIGN_END_LABEL } from "@/lib/campaign";
 import {
   ChevronRight,
   ChevronLeft,
@@ -48,8 +49,8 @@ export default function SetupWizard() {
   };
 
   const handleSubmit = async () => {
-    if (!password || password.length < 4) {
-      setError("Şifre en az 4 karakter olmalı");
+    if (!password || password.length < 6) {
+      setError("Şifre en az 6 karakter olmalı");
       return;
     }
     if (password !== confirmPassword) {
@@ -71,11 +72,12 @@ export default function SetupWizard() {
           description: description.trim() || undefined,
         }),
       });
+      const data = await res.json();
       if (!res.ok) {
-        const data = await res.json();
         throw new Error(data.error ?? "Kurulum başarısız");
       }
-      window.location.href = "/";
+      // Kayıt sonrası oturum açık: doğrudan yönetim paneline
+      window.location.href = `/${data.slug}/admin`;
     } catch (e) {
       setError(e instanceof Error ? e.message : "Hata oluştu");
     } finally {
@@ -115,7 +117,7 @@ export default function SetupWizard() {
             <div className="text-center mb-8">
               <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full text-white/80 text-sm mb-5 border border-white/10">
                 <Sparkles className="w-4 h-4" />
-                <span>Hoşgeldiniz</span>
+                <span>{CAMPAIGN_END_LABEL}'e kadar ücretsiz</span>
               </div>
               <h1 className="text-3xl font-bold text-white mb-3">
                 Dükkanınızı Kuralım
@@ -278,7 +280,7 @@ export default function SetupWizard() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="En az 4 karakter"
+                  placeholder="En az 6 karakter"
                   className="w-full px-4 py-3.5 rounded-2xl bg-white/10 border border-white/10 text-white placeholder-white/30 text-base focus:outline-none focus:ring-2 focus:ring-white/20 transition-all text-center tracking-widest"
                   autoFocus
                 />

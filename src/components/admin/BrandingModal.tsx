@@ -52,7 +52,6 @@ export default function BrandingModal({ business, template, onClose, onSave }: B
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          adminPassword: business.adminPassword,
           name,
           description,
           address,
@@ -114,7 +113,6 @@ export default function BrandingModal({ business, template, onClose, onSave }: B
         throw new Error(data.error ?? "Şirket silinemedi");
       }
 
-      sessionStorage.removeItem("admin_auth");
       window.location.href = "/";
     } catch (e) {
       setDeleteError(e instanceof Error ? e.message : "Hata oluştu");

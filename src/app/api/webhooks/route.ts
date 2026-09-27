@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireBusiness, requireWritableBusiness } from "@/lib/session";
 
 export async function GET() {
   try {
+    const auth = await requireBusiness();
+    if (auth.error) return auth.error;
     const webhooks = await prisma.webhook.findMany({
+      where: { businessId: auth.business.id },
       orderBy: { createdAt: "desc" },
     });
     return NextResponse.json(webhooks);
@@ -14,6 +18,8 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await requireWritableBusiness();
+    if (auth.error) return auth.error;
     const body = await req.json();
     const { url, event, secret } = body as {
       url: string;
@@ -37,6 +43,7 @@ export async function POST(req: NextRequest) {
 
     const webhook = await prisma.webhook.create({
       data: {
+        businessId: auth.business.id,
         url,
         event,
         secret: secret || null,
@@ -52,11 +59,14 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
+    const auth = await requireWritableBusiness();
+    if (auth.error) return auth.error;
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
     if (!id) return NextResponse.json({ error: "id gerekli" }, { status: 400 });
 
-    await prisma.webhook.delete({ where: { id } });
+    const { count } = await prisma.webhook.deleteMany({ where: { id, businessId: auth.business.id } });
+    if (!count) return NextResponse.json({ error: "Bulunamadı" }, { status: 404 });
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: "Silme başarısız" }, { status: 500 });
@@ -65,6 +75,8 @@ export async function DELETE(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
+    const auth = await requireWritableBusiness();
+    if (auth.error) return auth.error;
     const body = await req.json();
     const { id, isActive, url, event, secret } = body as {
       id: string;
@@ -82,12 +94,13 @@ export async function PUT(req: NextRequest) {
     if (event) data.event = event;
     if (secret !== undefined) data.secret = secret;
 
-    const webhook = await prisma.webhook.update({
-      where: { id },
+    const { count } = await prisma.webhook.updateMany({
+      where: { id, businessId: auth.business.id },
       data,
     });
+    if (!count) return NextResponse.json({ error: "Bulunamadı" }, { status: 404 });
 
-    return NextResponse.json(webhook);
+    return NextResponse.json(await prisma.webhook.findUnique({ where: { id } }));
   } catch {
     return NextResponse.json({ error: "Güncelleme başarısız" }, { status: 500 });
   }
